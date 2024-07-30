@@ -47,22 +47,30 @@ function generateStarRating($rating) {
 
 
 
-    <div class='filter'>
-        <label for="yearFilter">Filter by Year:</label>
-        <select id="yearFilter">
-            <option value="">All Years</option>
-            <?php foreach ($years as $year): ?>
-                <option value="<?= $year ?>"><?= $year ?></option>
-            <?php endforeach; ?>
-        </select>
-        &emsp;
-        <label for="statusFilter">Filter by Status:</label>
-        <select id="statusFilter">
-            <option value="">All Statuses</option>
-            <option value="Done">Read</option>
-            <option value="TBR">To Be Read</option>
-        </select>
+    <div class="searchContainer">
+        <div class="filter">
+            <label for="yearFilter">Filter by Year:</label>
+            <select id="yearFilter">
+                <option value="">All Years</option>
+                <?php foreach ($years as $year): ?>
+                    <option value="<?= $year ?>"><?= $year ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="filter">
+            <label for="statusFilter">Filter by Status:</label>
+            <select id="statusFilter">
+                <option value="">All Statuses</option>
+                <option value="Read">Read</option>
+                <option value="TBR">To Be Read</option>
+            </select>
+        </div>
+
+        <input type="text" id="searchBar" placeholder="Search for books...">
     </div>
+
+
 
 
     <div class='bookList'>
@@ -94,68 +102,82 @@ function generateStarRating($rating) {
 </div>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-    var yearFilter = document.getElementById("yearFilter");
-    var statusFilter = document.getElementById("statusFilter");
+        var yearFilter = document.getElementById("yearFilter");
+        var statusFilter = document.getElementById("statusFilter");
+        var searchBar = document.getElementById("searchBar");
 
-    function filterBooks() {
-        var selectedYear = yearFilter.value;
-        var selectedStatus = statusFilter.value;
+        function filterBooks() {
+            var selectedYear = yearFilter.value;
+            var selectedStatus = statusFilter.value.toLowerCase();
+            var searchQuery = searchBar.value.toLowerCase();
+            var bookItems = document.querySelectorAll(".bookItem");
+
+            bookItems.forEach(function(item) {
+                var itemYear = item.getAttribute("data-year");
+                var itemStatus = item.getAttribute("data-status").toLowerCase();
+                var itemTitle = item.getAttribute("data-title").toLowerCase();
+                var itemAuthor = item.getAttribute("data-author").toLowerCase();
+
+                var yearMatch = selectedYear === "" || itemYear === selectedYear;
+                var statusMatch = selectedStatus === "" || itemStatus === selectedStatus;
+                var searchMatch = itemTitle.includes(searchQuery) || itemAuthor.includes(searchQuery);
+
+                if (yearMatch && statusMatch && searchMatch) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        }
+
+        yearFilter.addEventListener("change", filterBooks);
+        statusFilter.addEventListener("change", filterBooks);
+        searchBar.addEventListener("input", filterBooks);
+
         var bookItems = document.querySelectorAll(".bookItem");
-
         bookItems.forEach(function(item) {
-            var itemYear = item.getAttribute("data-year");
-            var itemStatus = item.getAttribute("data-status");
-
-            var yearMatch = selectedYear === "" || itemYear === selectedYear;
-            var statusMatch = selectedStatus === "" || itemStatus === selectedStatus;
-
-            if (yearMatch && statusMatch) {
-                item.style.display = "block";
-            } else {
-                item.style.display = "none";
-            }
+            item.addEventListener("click", function() {
+                var bookTitle = item.getAttribute("data-title");
+                var bookAuthor = item.getAttribute("data-author");
+                fetchBookDetails(bookTitle, bookAuthor);
+            });
         });
-    }
 
-    yearFilter.addEventListener("change", filterBooks);
-    statusFilter.addEventListener("change", filterBooks);
+        var modal = document.getElementById("bookModal");
+        var span = document.getElementsByClassName("close")[0];
 
-    var bookItems = document.querySelectorAll(".bookItem");
-    bookItems.forEach(function(item) {
-        item.addEventListener("click", function() {
-            var bookTitle = item.getAttribute("data-title");
-            var bookAuthor = item.getAttribute("data-author");
-            fetchBookDetails(bookTitle, bookAuthor);
-        });
-    });
-
-    var modal = document.getElementById("bookModal");
-    var span = document.getElementsByClassName("close")[0];
-
-    span.onclick = function() {
-        modal.style.display = "none";
-    }
-
-    window.onclick = function(event) {
-        if (event.target == modal) {
+        span.onclick = function() {
             modal.style.display = "none";
         }
-    }
 
-    function fetchBookDetails(bookTitle, bookAuthor) {
-        var url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(bookTitle)}+inauthor:${encodeURIComponent(bookAuthor)}`;
-        fetch(url)
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        function fetchBookDetails(bookTitle, bookAuthor) {
+            var url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(bookTitle)}+inauthor:${encodeURIComponent(bookAuthor)}`;
+            fetch(url)
             .then(response => response.json())
             .then(data => {
                 if (data.items && data.items.length > 0) {
                     var book = data.items[0].volumeInfo;
+                    console.log(book)
+                    var isbn = book.industryIdentifiers ? book.industryIdentifiers[0].identifier : 'N/A';
+                    var averageRating = book.averageRating ? book.averageRating + ' / 5' : 'No rating available';
                     var subjects = book.categories ? book.categories.slice(0, 5).join(', ') : 'No subjects available.';
                     var detailsHtml = `
-                        <h2>${book.title}</h2>
-                        <p><strong>Authors:</strong> ${book.authors ? book.authors.join(', ') : 'Unknown'}</p>
-                        <p><strong>First Publish Year:</strong> ${book.publishedDate || 'Unknown'}</p>
-                        <p><strong>Subjects:</strong> ${subjects}</p>
-                        <p><strong>Summary:</strong> ${book.description || 'No summary available.'}</p>
+                    <h2>${book.title}</h2>
+                    <p><strong>Authors:</strong> ${book.authors ? book.authors.join(', ') : 'Unknown'}</p>
+                    <p><strong>First Publish Year:</strong> ${book.publishedDate || 'Unknown'}</p>
+                    <p><strong>Subjects:</strong> ${subjects}</p>
+                    <p><strong>Summary:</strong> ${book.description || 'No summary available.'}</p>
+                    <p><strong>ISBN:</strong> ${isbn}</p>
+                    <p><strong>Average Rating:</strong> ${averageRating} <em>(This is a global rating, not mine)</em></p>
+                    <div class="buy-buttons">
+                    <a href="https://www.amazon.ca/s?k=${isbn}" target="_blank" class="buy-button amazon-button">Buy from Amazon.ca</a>
+                    </div>
                     `;
                     document.getElementById("bookDetails").innerHTML = detailsHtml;
                     modal.style.display = "block";
@@ -164,12 +186,49 @@ function generateStarRating($rating) {
                     modal.style.display = "block";
                 }
             });
-    }
-});
+        }
+    });
+
 
 
 </script>
 <style>
+
+    .buy-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .buy-button {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 5px;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        width: 200px;
+        height: 40px;
+        line-height: 40px;
+    }
+
+    .amazon-button {
+        background-color: #FF9900; /* Amazon's button color */
+        color: black;
+        border: 1px solid #B12704;
+    }
+
+    .amazon-button:hover {
+        background-color: #B12704; /* Darker shade for hover effect */
+    }
+
+
+
+
     body {
         margin: 0;
     }
@@ -179,9 +238,27 @@ function generateStarRating($rating) {
         color: white;
 
     }
-    .filter {
+
+
+    .searchContainer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
         margin-bottom: 20px;
     }
+
+    .filter {
+        margin-right: 10px;
+    }
+
+    #searchBar {
+        width: 50%;
+        padding: 5px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
 
     .bookList {
         display: grid;
@@ -228,7 +305,7 @@ function generateStarRating($rating) {
         padding-top: 100px; 
         left: 0;
         top: 0;
-        width: 100%; 
+        width: 100%;
         height: 100%; 
         overflow: auto; 
         background-color: rgb(0,0,0); 
@@ -241,7 +318,7 @@ function generateStarRating($rating) {
         margin: auto;
         padding: 20px;
         border: 1px solid #888;
-        width: 80%;
+        width: 50%;
     }
 
     .close {
