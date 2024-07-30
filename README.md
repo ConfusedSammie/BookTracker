@@ -6,8 +6,9 @@ Welcome to the BookTracker project! This application helps you track your readin
 
 - Track books you have read
 - Display book details such as title, author, month read, and rating
+- Visual progress bar indicating reading goals
 - Filter books by year and status (Read/TBR)
-- View more information about a book, such as summary and subjects, fetched from the Open Library API
+- View more information about a book, such as summary and subjects, fetched from the Google Books API
 
 ## Suggestions for Improvement
 
