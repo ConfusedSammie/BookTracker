@@ -63,7 +63,7 @@ function generateStarRating($rating) {
                 <label for="statusFilter">Filter by Status:</label>
                 <select id="statusFilter" aria-label="Filter by Status">
                     <option value="">All Statuses</option>
-                    <option value="Read">Read</option>
+                    <option value="Done">Read</option>
                     <option value="TBR">To Be Read</option>
                 </select>
             </div>
