@@ -94,68 +94,68 @@ function generateStarRating($rating) {
 </div>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        var yearFilter = document.getElementById("yearFilter");
-        var statusFilter = document.getElementById("statusFilter");
+    var yearFilter = document.getElementById("yearFilter");
+    var statusFilter = document.getElementById("statusFilter");
 
-        function filterBooks() {
-            var selectedYear = yearFilter.value;
-            var selectedStatus = statusFilter.value;
-            var bookItems = document.querySelectorAll(".bookItem");
-
-            bookItems.forEach(function(item) {
-                var itemYear = item.getAttribute("data-year");
-                var itemStatus = item.getAttribute("data-status");
-
-                var yearMatch = selectedYear === "" || itemYear === selectedYear;
-                var statusMatch = selectedStatus === "" || itemStatus === selectedStatus;
-
-                if (yearMatch && statusMatch) {
-                    item.style.display = "block";
-                } else {
-                    item.style.display = "none";
-                }
-            });
-        }
-
-        yearFilter.addEventListener("change", filterBooks);
-        statusFilter.addEventListener("change", filterBooks);
-
+    function filterBooks() {
+        var selectedYear = yearFilter.value;
+        var selectedStatus = statusFilter.value;
         var bookItems = document.querySelectorAll(".bookItem");
+
         bookItems.forEach(function(item) {
-            item.addEventListener("click", function() {
-                var bookTitle = item.getAttribute("data-title");
-                var bookAuthor = item.getAttribute("data-author");
-                fetchBookDetails(bookTitle, bookAuthor);
-            });
+            var itemYear = item.getAttribute("data-year");
+            var itemStatus = item.getAttribute("data-status");
+
+            var yearMatch = selectedYear === "" || itemYear === selectedYear;
+            var statusMatch = selectedStatus === "" || itemStatus === selectedStatus;
+
+            if (yearMatch && statusMatch) {
+                item.style.display = "block";
+            } else {
+                item.style.display = "none";
+            }
         });
+    }
 
-        var modal = document.getElementById("bookModal");
-        var span = document.getElementsByClassName("close")[0];
+    yearFilter.addEventListener("change", filterBooks);
+    statusFilter.addEventListener("change", filterBooks);
 
-        span.onclick = function() {
+    var bookItems = document.querySelectorAll(".bookItem");
+    bookItems.forEach(function(item) {
+        item.addEventListener("click", function() {
+            var bookTitle = item.getAttribute("data-title");
+            var bookAuthor = item.getAttribute("data-author");
+            fetchBookDetails(bookTitle, bookAuthor);
+        });
+    });
+
+    var modal = document.getElementById("bookModal");
+    var span = document.getElementsByClassName("close")[0];
+
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
             modal.style.display = "none";
         }
+    }
 
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-
-        function fetchBookDetails(bookTitle, bookAuthor) {
-            var url = `https://openlibrary.org/search.json?title=${encodeURIComponent(bookTitle)}&author=${encodeURIComponent(bookAuthor)}`;
-            fetch(url)
+    function fetchBookDetails(bookTitle, bookAuthor) {
+        var url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(bookTitle)}+inauthor:${encodeURIComponent(bookAuthor)}`;
+        fetch(url)
             .then(response => response.json())
             .then(data => {
-                if (data.docs && data.docs.length > 0) {
-                    var book = data.docs[0];
-                    var subjects = book.subject ? book.subject.slice(0, 5).join(', ') : 'No subjects available.';
-                    console.log(book);
+                if (data.items && data.items.length > 0) {
+                    var book = data.items[0].volumeInfo;
+                    var subjects = book.categories ? book.categories.slice(0, 5).join(', ') : 'No subjects available.';
                     var detailsHtml = `
-                    <h2>${book.title}</h2>
-                    <p><strong>Authors:</strong> ${book.author_name ? book.author_name.join(', ') : 'Unknown'}</p>
-                    <p><strong>First Publish Year:</strong> ${book.first_publish_year || 'Unknown'}</p>
-                    <p><strong>Subjects:</strong> ${subjects}</p>
+                        <h2>${book.title}</h2>
+                        <p><strong>Authors:</strong> ${book.authors ? book.authors.join(', ') : 'Unknown'}</p>
+                        <p><strong>First Publish Year:</strong> ${book.publishedDate || 'Unknown'}</p>
+                        <p><strong>Subjects:</strong> ${subjects}</p>
+                        <p><strong>Summary:</strong> ${book.description || 'No summary available.'}</p>
                     `;
                     document.getElementById("bookDetails").innerHTML = detailsHtml;
                     modal.style.display = "block";
@@ -164,8 +164,9 @@ function generateStarRating($rating) {
                     modal.style.display = "block";
                 }
             });
-        }
-    });
+    }
+});
+
 
 </script>
 <style>
