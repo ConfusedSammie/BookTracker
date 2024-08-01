@@ -10,6 +10,17 @@ Welcome to the BookTracker project! This application helps you track your readin
 - Search for books by title or author
 - View more information about a book, such as summary, subjects, ISBN, and average rating fetched from the Google Books API
 - Button to buy books from Amazon.ca
+- **New!** Suggest a book feature: Users can now suggest books and leave their suggestions for review.
+
+## How to Use the Suggestion Feature
+
+1. **Go to the main page of the BookTracker website.**
+2. **Click the "Submit a Suggestion" button.**
+3. **A modal will appear with a form to fill in your suggestion.**
+4. **Search for the book you want to suggest using the Google Books API integrated search bar.**
+5. **Fill in your name and suggestion details.**
+6. **Submit the form.**
+7. **A notification will confirm that your suggestion has been submitted.**
 
 ## Suggestions for Improvement
 
