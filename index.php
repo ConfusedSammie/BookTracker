@@ -29,163 +29,111 @@ function generateStarRating($rating) {
     return $starOutput;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sam's Book List</title>
-</head>
-<body>
-
-    <main role="main" class='wholeContainer'>
-
-        <div id="bookModal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
-            <div class="modal-content">
-                <span class="close" role="button" tabindex="0" aria-label="Close">&times;</span>
-                <div id="bookDetails"></div>
-            </div>
-        </div>
-
-        <div class="searchContainer">
-            <div class="filter">
-                <label for="yearFilter">Filter by Year:</label>
-                <select id="yearFilter" aria-label="Filter by Year">
-                    <option value="">All Years</option>
-                    <?php foreach ($years as $year): ?>
-                        <option value="<?= $year ?>"><?= $year ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <div class="filter">
-                <label for="statusFilter">Filter by Status:</label>
-                <select id="statusFilter" aria-label="Filter by Status">
-                    <option value="">All Statuses</option>
-                    <option value="Done">Read</option>
-                    <option value="TBR">To Be Read</option>
-                </select>
-            </div>
-
-            <input type="text" id="searchBar" placeholder="Search for books..." aria-label="Search for books">
-        </div>
-
-        <div class='bookList'>
-            <?php foreach($books as $book): ?>
-                <div class='bookItem' role="listitem" data-title="<?= htmlspecialchars($book['Title'], ENT_QUOTES, 'UTF-8') ?>" data-author="<?= htmlspecialchars($book['Author'], ENT_QUOTES, 'UTF-8') ?>" data-year="<?= date('Y', strtotime($book['Month_Read'])) ?>" data-status="<?= htmlspecialchars($book['Status'], ENT_QUOTES, 'UTF-8') ?>">
-                    <div class='bookMonth <?= $book['Status'] == 'TBR' ? 'tbr' : '' ?>'>
-                        <?= htmlspecialchars($book['Month_Read'], ENT_QUOTES, 'UTF-8') ?>
-                    </div>
-                    <div class='bookImage'>
-                        <img src='<?= htmlspecialchars($book['image_url'], ENT_QUOTES, 'UTF-8') ?>' alt='Book cover of <?= htmlspecialchars($book['Title'], ENT_QUOTES, 'UTF-8') ?>'>
-                    </div>
-                    <div class='bookTitle'>
-                        <?= htmlspecialchars($book['Title'], ENT_QUOTES, 'UTF-8') ?>
-                    </div>
-                    <div class='bookAuthor'>
-                        <?= htmlspecialchars($book['Author'], ENT_QUOTES, 'UTF-8') ?>
-                    </div>
-                    <div class='bookRating'>
-                        <?= generateStarRating($book['Stars']) ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-
-    </main>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var yearFilter = document.getElementById("yearFilter");
-            var statusFilter = document.getElementById("statusFilter");
-            var searchBar = document.getElementById("searchBar");
-
-            function filterBooks() {
-                var selectedYear = yearFilter.value;
-                var selectedStatus = statusFilter.value.toLowerCase();
-                var searchQuery = searchBar.value.toLowerCase();
-                var bookItems = document.querySelectorAll(".bookItem");
-
-                bookItems.forEach(function(item) {
-                    var itemYear = item.getAttribute("data-year");
-                    var itemStatus = item.getAttribute("data-status").toLowerCase();
-                    var itemTitle = item.getAttribute("data-title").toLowerCase();
-                    var itemAuthor = item.getAttribute("data-author").toLowerCase();
-
-                    var yearMatch = selectedYear === "" || itemYear === selectedYear;
-                    var statusMatch = selectedStatus === "" || itemStatus === selectedStatus;
-                    var searchMatch = itemTitle.includes(searchQuery) || itemAuthor.includes(searchQuery);
-
-                    if (yearMatch && statusMatch && searchMatch) {
-                        item.style.display = "block";
-                    } else {
-                        item.style.display = "none";
-                    }
-                });
-            }
-
-            yearFilter.addEventListener("change", filterBooks);
-            statusFilter.addEventListener("change", filterBooks);
-            searchBar.addEventListener("input", filterBooks);
-
-            var bookItems = document.querySelectorAll(".bookItem");
-            bookItems.forEach(function(item) {
-                item.addEventListener("click", function() {
-                    var bookTitle = item.getAttribute("data-title");
-                    var bookAuthor = item.getAttribute("data-author");
-                    fetchBookDetails(bookTitle, bookAuthor);
-                });
-            });
-
-            var modal = document.getElementById("bookModal");
-            var span = document.getElementsByClassName("close")[0];
-
-            span.onclick = function() {
-                modal.style.display = "none";
-            }
-
-            window.onclick = function(event) {
-                if (event.target == modal) {
-                    modal.style.display = "none";
-                }
-            }
-
-            function fetchBookDetails(bookTitle, bookAuthor) {
-                var url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(bookTitle)}+inauthor:${encodeURIComponent(bookAuthor)}`;
-                fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.items && data.items.length > 0) {
-                        var book = data.items[0].volumeInfo;
-                        console.log(book)
-                        var isbn = book.industryIdentifiers ? book.industryIdentifiers[0].identifier : 'N/A';
-                        var averageRating = book.averageRating ? book.averageRating + ' / 5' : 'No rating available';
-                        var subjects = book.categories ? book.categories.slice(0, 5).join(', ') : 'No subjects available.';
-                        var detailsHtml = `
-                        <h2>${book.title}</h2>
-                        <p><strong>Authors:</strong> ${book.authors ? book.authors.join(', ') : 'Unknown'}</p>
-                        <p><strong>First Publish Year:</strong> ${book.publishedDate || 'Unknown'}</p>
-                        <p><strong>Subjects:</strong> ${subjects}</p>
-                        <p><strong>Summary:</strong> ${book.description || 'No summary available.'}</p>
-                        <p><strong>ISBN:</strong> ${isbn}</p>
-                        <p><strong>Average Rating:</strong> ${averageRating} <em>(This is a global rating, not mine)</em></p>
-                        <div class="buy-buttons">
-                        <a href="https://www.amazon.ca/s?k=${isbn}" target="_blank" class="buy-button amazon-button">Buy from Amazon.ca</a>
-                        </div>
-                        `;
-                        document.getElementById("bookDetails").innerHTML = detailsHtml;
-                        modal.style.display = "block";
-                    } else {
-                        document.getElementById("bookDetails").innerHTML = '<p>No details available for this book.</p>';
-                        modal.style.display = "block";
-                    }
-                });
-            }
-        });
-    </script>
-
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #023337;
+            color: #fff;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #00262a;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .searchContainer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px;
+            gap: 10px;
+        }
+
+        .filter {
+            margin-right: 10px;
+        }
+
+        #searchBar {
+            width: 50%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .bookList {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            padding: 0 20px;
+        }
+
+        .bookItem {
+            text-align: center;
+            background-color: #004f4f;
+            padding: 10px;
+            border-radius: 10px;
+            transition: transform 0.3s;
+            cursor:pointer;
+        }
+
+        .bookItem:hover {
+            transform: scale(1.05);
+        }
+
+        .bookImage img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .bookTitle, .bookAuthor {
+            margin: 10px 0;
+        }
+
+        .bookTitle {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .bookAuthor {
+            font-size: 0.875rem;
+            color: #a0a0a0;
+        }
+
+        .bookMonth {
+            background-color: #EDF4FF;
+            color: #3F63C0;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .bookMonth.tbr {
+            background-color: red;
+            color: white;
+        }
+
+        .bookRating {
+            margin-top: 10px;
+        }
+
         .buy-buttons {
             margin-top: 20px;
             display: flex;
@@ -218,80 +166,6 @@ function generateStarRating($rating) {
             background-color: #B12704; /* Darker shade for hover effect */
         }
 
-        body {
-            margin: 0;
-            color: white;
-            background-color: #023337;
-        }
-
-        .wholeContainer {
-            padding: 20px;
-        }
-
-        .searchContainer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .filter {
-            margin-right: 10px;
-        }
-
-        #searchBar {
-            width: 50%;
-            padding: 5px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .bookList {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 16px;
-            padding-top: 30px;
-        }
-
-        .bookItem {
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .bookImage img {
-            width: 100%;
-            height: auto;
-        }
-
-        .bookImage {
-            margin-bottom: 10px;
-        }
-
-        .bookTitle {
-            font-size: 16px;
-            font-weight: 700;
-        }
-
-        .bookAuthor {
-            margin-bottom: 5px;
-        }
-
-        .bookMonth {
-            background-color: #EDF4FF;
-            color: #3F63C0;
-            padding: 5px 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 10px;
-        }
-
-        .bookMonth.tbr {
-            background-color: red;
-            color: white;
-        }
-
         .modal {
             display: none; 
             position: fixed; 
@@ -302,8 +176,7 @@ function generateStarRating($rating) {
             width: 100%;
             height: 100%; 
             overflow: auto; 
-            background-color: rgb(0,0,0); 
-            background-color: rgba(0,0,0,0.4); 
+            background-color: rgba(0, 0, 0, 0.8);
         }
 
         .modal-content {
@@ -313,6 +186,7 @@ function generateStarRating($rating) {
             padding: 20px;
             border: 1px solid #888;
             width: 50%;
+            border-radius: 10px;
         }
 
         .close {
@@ -353,5 +227,154 @@ function generateStarRating($rating) {
             }
         }
     </style>
+</head>
+<body>
+<header>
+    <h1>Sam's Book List</h1>
+</header>
+
+<main role="main" class='wholeContainer'>
+    <div id="bookModal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
+        <div class="modal-content">
+            <span class="close" role="button" tabindex="0" aria-label="Close">&times;</span>
+            <div id="bookDetails"></div>
+        </div>
+    </div>
+
+    <div class="searchContainer">
+        <div class="filter">
+            <label for="yearFilter">Filter by Year:</label>
+            <select id="yearFilter" aria-label="Filter by Year">
+                <option value="">All Years</option>
+                <?php foreach ($years as $year): ?>
+                    <option value="<?= $year ?>"><?= $year ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="filter">
+            <label for="statusFilter">Filter by Status:</label>
+            <select id="statusFilter" aria-label="Filter by Status">
+                <option value="">All Statuses</option>
+                <option value="Done">Read</option>
+                <option value="TBR">To Be Read</option>
+            </select>
+        </div>
+
+        <input type="text" id="searchBar" placeholder="Search for books..." aria-label="Search for books">
+    </div>
+
+    <div class='bookList'>
+        <?php foreach($books as $book): ?>
+            <div class='bookItem' role="listitem" data-title="<?= htmlspecialchars($book['Title'], ENT_QUOTES, 'UTF-8') ?>" data-author="<?= htmlspecialchars($book['Author'], ENT_QUOTES, 'UTF-8') ?>" data-year="<?= date('Y', strtotime($book['Month_Read'])) ?>" data-status="<?= htmlspecialchars($book['Status'], ENT_QUOTES, 'UTF-8') ?>">
+                <div class='bookMonth <?= $book['Status'] == 'TBR' ? 'tbr' : '' ?>'>
+                    <?= htmlspecialchars($book['Month_Read'], ENT_QUOTES, 'UTF-8') ?>
+                </div>
+                <div class='bookImage'>
+                    <img src='<?= htmlspecialchars($book['image_url'], ENT_QUOTES, 'UTF-8') ?>' alt='Book cover of <?= htmlspecialchars($book['Title'], ENT_QUOTES, 'UTF-8') ?>'>
+                </div>
+                <div class='bookTitle'>
+                    <?= htmlspecialchars($book['Title'], ENT_QUOTES, 'UTF-8') ?>
+                </div>
+                <div class='bookAuthor'>
+                    <?= htmlspecialchars($book['Author'], ENT_QUOTES, 'UTF-8') ?>
+                </div>
+                <div class='bookRating'>
+                    <?= generateStarRating($book['Stars']) ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</main>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var yearFilter = document.getElementById("yearFilter");
+        var statusFilter = document.getElementById("statusFilter");
+        var searchBar = document.getElementById("searchBar");
+
+        function filterBooks() {
+            var selectedYear = yearFilter.value;
+            var selectedStatus = statusFilter.value.toLowerCase();
+            var searchQuery = searchBar.value.toLowerCase();
+            var bookItems = document.querySelectorAll(".bookItem");
+
+            bookItems.forEach(function(item) {
+                var itemYear = item.getAttribute("data-year");
+                var itemStatus = item.getAttribute("data-status").toLowerCase();
+                var itemTitle = item.getAttribute("data-title").toLowerCase();
+                var itemAuthor = item.getAttribute("data-author").toLowerCase();
+
+                var yearMatch = selectedYear === "" || itemYear === selectedYear;
+                var statusMatch = selectedStatus === "" || itemStatus === selectedStatus;
+                var searchMatch = itemTitle.includes(searchQuery) || itemAuthor.includes(searchQuery);
+
+                if (yearMatch && statusMatch && searchMatch) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        }
+
+        yearFilter.addEventListener("change", filterBooks);
+        statusFilter.addEventListener("change", filterBooks);
+        searchBar.addEventListener("input", filterBooks);
+
+        var bookItems = document.querySelectorAll(".bookItem");
+        bookItems.forEach(function(item) {
+            item.addEventListener("click", function() {
+                var bookTitle = item.getAttribute("data-title");
+                var bookAuthor = item.getAttribute("data-author");
+                fetchBookDetails(bookTitle, bookAuthor);
+            });
+        });
+
+        var modal = document.getElementById("bookModal");
+        var span = document.getElementsByClassName("close")[0];
+
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        function fetchBookDetails(bookTitle, bookAuthor) {
+            var url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(bookTitle)}+inauthor:${encodeURIComponent(bookAuthor)}`;
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.items && data.items.length > 0) {
+                    var book = data.items[0].volumeInfo;
+                    console.log(book)
+                    var isbn = book.industryIdentifiers ? book.industryIdentifiers[0].identifier : 'N/A';
+                    var averageRating = book.averageRating ? book.averageRating + ' / 5' : 'No rating available';
+                    var subjects = book.categories ? book.categories.slice(0, 5).join(', ') : 'No subjects available.';
+                    var detailsHtml = `
+                        <h2>${book.title}</h2>
+                        <p><strong>Authors:</strong> ${book.authors ? book.authors.join(', ') : 'Unknown'}</p>
+                        <p><strong>First Publish Year:</strong> ${book.publishedDate || 'Unknown'}</p>
+                        <p><strong>Subjects:</strong> ${subjects}</p>
+                        <p><strong>Summary:</strong> ${book.description || 'No summary available.'}</p>
+                        <p><strong>ISBN:</strong> ${isbn}</p>
+                        <p><strong>Average Rating:</strong> ${averageRating} <em>(This is a global rating, not mine)</em></p>
+                        <div class="buy-buttons">
+                            <a href="https://www.amazon.ca/s?k=${isbn}" target="_blank" class="buy-button amazon-button">Buy from Amazon.ca</a>
+                        </div>
+                    `;
+                    document.getElementById("bookDetails").innerHTML = detailsHtml;
+                    modal.style.display = "block";
+                } else {
+                    document.getElementById("bookDetails").innerHTML = '<p>No details available for this book.</p>';
+                    modal.style.display = "block";
+                }
+            });
+        }
+    });
+</script>
 </body>
 </html>
